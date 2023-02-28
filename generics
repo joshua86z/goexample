@@ -1,0 +1,73 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type Arg interface {
+	From()
+}
+
+type Res interface {
+	Encode() string
+}
+
+type Myf = func(str string) Res
+
+func register[A Arg, R Res](f func(A) R) Myf {
+
+	return func(str string) Res {
+
+		var x A
+		_ = json.Unmarshal([]byte(str), &x)
+
+		return f(x)
+	}
+}
+
+var (
+	m1 = make(map[string]Myf)
+)
+
+func init() {
+
+	m1["/get-user"] = register(GetUser)
+}
+
+func main() {
+
+	func1 := m1["/get-user"]
+	res := func1(`{"Name":"zyc"}`)
+
+	fmt.Println("取到数据=", res)
+
+}
+
+func GetUser(arg Arg1) User {
+
+	fmt.Println("传进来的参数= ", arg)
+
+	return User{Name: arg.Name}
+}
+
+type Arg1 struct {
+	Name string
+}
+
+func (a Arg1) From() {
+
+}
+
+type User struct {
+	ID   int
+	Name string
+	Sex  int8
+}
+
+func (u User) Encode() string {
+
+	b, _ := json.Marshal(u)
+
+	return string(b)
+}
