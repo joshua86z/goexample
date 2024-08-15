@@ -77,9 +77,6 @@ func main() {
 		y = y1
 		slog.Info("write image", "k", k, "x", rect1.Max.X, "y", rect1.Max.Y)
 	}
-	// Draw the first image on the left side
-
-	// Draw the second image on the right side
 
 	buf := new(bytes.Buffer)
 	err = png.Encode(buf, combined)
@@ -87,28 +84,22 @@ func main() {
 		panic(err)
 	}
 
+	f, err := os.Create("ok.png")
+	if err != nil {
+		panic(err)
+	}
+	b := buf.Bytes()
+	for i := 0; i < len(b); i += 1024 {
+		_, err = f.Write(b[i : i+1024])
+		if err != nil {
+			panic(err)
+		}
+
+		slog.Info("write file", "i", i)
+	}
+
 	// Save the combined image to a file
 	if err = os.WriteFile("ok.png", buf.Bytes(), 0644); err != nil {
 		panic(err)
 	}
-}
-
-func joinImages(img1, img2 image.Image) image.Image {
-	rect := image.Rect(0, 0, max(img1.Bounds().Dx(), img2.Bounds().Dx()), img1.Bounds().Dy()+img2.Bounds().Dy())
-	combined := image.NewRGBA(rect)
-
-	// Fill the background with white color
-	draw.Draw(combined, combined.Bounds(), &image.Uniform{C: color.White}, image.Point{}, draw.Src)
-
-	// Draw the first image on the left side
-	draw.Draw(combined, img1.Bounds().Add(image.Pt(0, 0)), img1, image.Point{}, draw.Src)
-
-	// Draw the second image on the right side
-	draw.Draw(combined, img2.Bounds().Add(image.Pt(0, img1.Bounds().Dy())), img2, image.Point{}, draw.Src)
-
-	buf := new(bytes.Buffer)
-	_ = png.Encode(buf, combined)
-
-	ret, _ := png.Decode(buf)
-	return ret
 }
